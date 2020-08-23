@@ -23,13 +23,13 @@ data DatabaseAccess a =
   | Successful a
   deriving Generic
 ...
-x <- doThing >>= match error (error . show) pure
+x <- doThing >>= \g -> match g error (error . show) pure
 ```
 
 This is the motivating case, but there are many others! For instance, you can
 also replace your use of either and maybe with the more "Generic" (heh) match.
 
 ```haskell
-x <- doThing >>= match errorHandler pure
-y <- doOtherThing >>= match (throwIO Shriek) pure
+x <- doThing >>= \g -> match g errorHandler pure
+y <- doOtherThing >>= \g -> match g (throwIO Shriek) pure
 ```
