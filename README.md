@@ -67,3 +67,10 @@ x <- doThing >>= \g -> match g error (error . show) pure
 Contributions are very welcome! Feel free to create an issue or a PR or
 ping me on any platform to chat about whatever, especially improvements to my
 libraries.
+
+## Compatibility
+
+I support all of the GHC versions that I typically do in my code, from 8.6.1
+to 8.10.2. I build locally on Mac, and my travis builds are on Linux, so
+if you run into problems on Windows, let me know. If you want to be sure that
+a build will pass, run the test script in this repository.
