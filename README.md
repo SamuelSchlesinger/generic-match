@@ -1,5 +1,8 @@
 # generic-match
 
+[![Hackage](https://img.shields.io/hackage/v/generic-match.svg)](https://hackage.haskell.org/package/generic-match)
+[![Build Status](https://travis-ci.org/SamuelSchlesinger/generic-match.svg?branch=master)](https://travis-ci.org/SamuelSchlesinger/generic-match)
+
 When I'm writing Haskell code, often I write things like:
 
 ```haskell
