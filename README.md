@@ -3,21 +3,50 @@
 [![Hackage](https://img.shields.io/hackage/v/generic-match.svg)](https://hackage.haskell.org/package/generic-match)
 [![Build Status](https://travis-ci.org/SamuelSchlesinger/generic-match.svg?branch=master)](https://travis-ci.org/SamuelSchlesinger/generic-match)
 
-When I'm writing Haskell code, often I write things like:
+## What?
+An implementation of first-class pattern matches in Haskell.
+
+## Why?
+Oftentimes, when writing Haskell code, we want to branch on multiple cases of
+a sum type, such as
 
 ```haskell
-x <- doThing >>= either errorHandler pure
-y <- doOtherThing >>= maybe (throwIO Shriek) pure
+data TravelMethod
+  = Airplane Airport UTCTime
+  | Train TrainStation UTCTime
+  | Driving
 ```
 
-This comes up in more places than error handling, but I think this is a
-sufficient example. There is a compromise one makes with their API, where
-they either offer a specific error type, and force you to deconstruct it and
-fiddle with it on your own, but usually the names are more descriptive. On
-the other hand, with Either or Maybe, we can use all of the standard functions
-available for operating on them, such as either and maybe. This package is
-getting rid of the cost of entry for deconstructing your own types in this
-same style. Now we can write:
+For instance, lets say that we want to grab out the time. In Haskell, we can
+do this by writing:
+
+```haskell
+timeOfTravel :: TravelMethod -> Maybe UTCTime
+timeOfTravel = \case
+  Airplane _airport time -> Just time
+  Train _trainStation time -> Just time
+  Driving -> Nothing
+```
+
+This is concise, and preferable to many other languages, but in this case we
+can do even better using this library.
+
+```haskell
+timeOfTravel travelMethod = match travelMethod (Just . flip const) (Just . flip const) Nothing
+```
+
+In this example, perhaps we don't save much, but I hope the principle is clear.
+The case for using this library is when you want to branch on the contents of
+each different sum, and you _already_ have functions or concise combinators to
+build functions that handle your inputs. For a Haskeller, this is already
+rather familiar, I claim!
+
+```haskell
+either l r x == match x l r
+maybe n j x == match x n j
+```
+
+## Examples
 
 ```haskell
 data DatabaseAccess a =
@@ -25,14 +54,16 @@ data DatabaseAccess a =
   | InvalidRowCount Int
   | Successful a
   deriving Generic
+
+doThing :: m (DatabaseAccess Bool)
+
 ...
+
 x <- doThing >>= \g -> match g error (error . show) pure
 ```
 
-This is the motivating case, but there are many others! For instance, you can
-also replace your use of either and maybe with the more "Generic" (heh) match.
+## Contribution
 
-```haskell
-x <- doThing >>= \g -> match g errorHandler pure
-y <- doOtherThing >>= \g -> match g (throwIO Shriek) pure
-```
+Contributions are very welcome! Feel free to create an issue or a PR or
+ping me on any platform to chat about whatever, especially improvements to my
+libraries.
