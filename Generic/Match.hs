@@ -16,10 +16,13 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
 {- |
-Name: Generic.Match
-Description: First class pattern matching for GHC.Generics.
-Copyright: 2020-2024 Samuel Schlesinger
+Module: Generic.Match
+Copyright: (c) Samuel Schlesinger 2020-2024
 License: MIT
+Maintainer: sgschlesinger@gmail.com
+Stability: experimental
+Portability: non-portable
+Description: First class pattern matching for GHC.Generics.
 -}
 module Generic.Match
 (
