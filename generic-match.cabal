@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                generic-match
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            First class pattern matching
 description:         First class pattern matching.
 license:             MIT
@@ -12,7 +12,17 @@ category:            Data
 extra-source-files:  CHANGELOG.md, README.md
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
-tested-with:         GHC ==8.6.3 || ==8.8.3 || ==8.10.1
+tested-with:         GHC ==8.6.1 ||
+                         ==8.6.2 ||
+                         ==8.6.3 ||
+                         ==8.6.4 ||
+                         ==8.6.5 ||
+                         ==8.8.1 ||
+                         ==8.8.2 ||
+                         ==8.8.3 ||
+                         ==8.8.4 ||
+                         ==8.10.1 ||
+                         ==8.10.2
 
 source-repository head
   type: git
