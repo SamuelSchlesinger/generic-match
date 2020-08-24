@@ -1,8 +1,8 @@
 cabal-version:       2.4
 name:                generic-match
 version:             0.1.0.0
-synopsis:            For when first class pattern matches are needed
-description:         For when first class pattern matches are needed.
+synopsis:            First class pattern matching
+description:         First class pattern matching.
 license:             MIT
 license-file:        LICENSE
 author:              Samuel Schlesinger
