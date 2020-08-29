@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -33,7 +34,6 @@ module Generic.Match
 , Consume
 -- * Type families
 , Matcher
-, StripData
 , Matcher'
 , Consumer
 -- * Re-exported from GHC.Generics
@@ -41,9 +41,11 @@ module Generic.Match
 ) where
 
 import Data.Foldable
-import GHC.Generics
+import Data.Kind
 import Data.Void
 import Prelude
+import Generics.SOP
+import qualified GHC.Generics as GHC
 
 -- | A first class pattern matching function for anything 'Generic', in the style of 'either' and
 -- 'maybe', but with the first argument being the thing you are pattern
@@ -63,12 +65,12 @@ import Prelude
 --    Clap Int Bool
 --  | Splop [Integer] Float
 --  | Flep [Int] [Float] [Bool]
---  deriving Generic
+--  deriving (GHC.Generic, Generic)
 -- 
--- newtype X = X { unX :: Int } deriving Generic
+-- newtype X = X { unX :: Int } deriving (GHC.Generic, Generic)
 --
 -- data Klop = Cloop Klop
---  deriving Generic
+--  deriving (GHC.Generic, Generic)
 --
 -- tests :: Bool
 -- tests = and
@@ -104,7 +106,7 @@ import Prelude
 -- boolMatcher = ()
 -- 
 -- data Thing = Thing Bool
---   deriving Generic
+--   deriving (GHC.Generic, Generic)
 --
 -- thingMatcher :: Matcher Thing r ~ ((Bool -> r) -> r) => ()
 -- thingMatcher = ()
@@ -126,61 +128,47 @@ import Prelude
 -- '()' monoid that I can think of, all of these constraints must be true.
 -- This allowed me to develop this library by making instances that made
 -- each new constraint I added true.
-match :: forall b r a x0 x1 x2 x3. (Generic b, Match a r, Rep b ~ D1 ('MetaData x0 x1 x2 x3) a) => b -> Matcher b r
-match (from -> M1 a) = match' @a @r a      
+match :: forall b r xs. (Generic b, Match (Code b) r) => b -> Matcher b r
+match (from -> SOP xs) = match' @(Code b) @r xs
 
 -- | The type of a first class pattern match, having consumed the input.
-type Matcher x r = Matcher' (StripData (Rep x)) r
-
--- | The type family that strips the 'MetaData' off of a 'GHC.Generics'
--- 'Rep'resentation.
-type family StripData g where
-  StripData (D1 ('MetaData x0 x1 x2 x3) d) = d
+type Matcher b r = Matcher' (Code b) r
 
 -- | The utility family which defines a 'Matcher', after stripping the
 -- metadata from the top level of the 'GHC.Generics' 'Rep'resentation..
-type family Matcher' x r where
-  Matcher' V1 r = r
-  Matcher' (C1 ('MetaCons x4 x5 x6) a) r = Consumer a r -> r
-  Matcher' (C1 ('MetaCons x4 x5 x6) a :+: b) r = Consumer a r -> Matcher' b r
+type family Matcher' (xs :: [[Type]]) r where
+  Matcher' '[] r = r
+  Matcher' (x ': xs) r = Consumer x r -> Matcher' xs r
 
 -- | The class that is used to inductively define the pattern matching for
 -- a particular generic type.
-class Match g r where
-  match' :: forall x. g x -> Matcher' g r
-  const' :: r -> Matcher' g r
+class Match xs r where
+  match' :: NS (NP I) xs -> Matcher' xs r
+  const' :: r -> Matcher' xs r
 
-instance Match V1 r where
+instance Match '[] r where
   match' x = case x of
   const' = id
 
-instance Consume a => Match (C1 ('MetaCons x4 x5 x6) a) r where
-  match' (M1 a) f = consume a f
-  const' r _ = r
-
-instance (Consume a, Match b r) => Match (C1 ('MetaCons x4 x5 x6) a :+: b) r where
-  const' r _ = const' @b r
-  match' (L1 (M1 a)) = \c -> const' @b @r (consume @a a c)
-  match' (R1 b) = \_ -> match' @b @r b
+instance (Consume x, Match xs r) => Match (x ': xs) r where
+  const' r _ = const' @xs r
+  match' (Z x) = \c -> const' @xs @r (consume @x x c)
+  match' (S xs) = \_ -> match' @xs @r xs
 
 -- | The type family that describes how to consume a product inside of a 'Generic' type.
-type family Consumer x r where
-  Consumer U1 r = r
-  Consumer (S1 ('MetaSel x0 x1 x2 x3) (Rec0 x)) r = x -> r
-  Consumer (S1 ('MetaSel x0 x1 x2 x3) (Rec0 x) :*: y) r = x -> Consumer y r
+type family Consumer (xs :: [Type]) (r :: Type) where
+  Consumer '[] r = r
+  Consumer (x ': xs) r = x -> Consumer xs r
 
 -- | The typeclass used to consume a product inside of a 'Generic' type.
-class Consume g where
-  consume :: forall r x. g x -> Consumer g r -> r
+class Consume xs where
+  consume :: forall r. NP I xs -> Consumer xs r -> r
 
-instance Consume U1 where
-  consume U1 r = r
+instance Consume '[] where
+  consume Nil r = r
 
-instance Consume (S1 ('MetaSel x0 x1 x2 x3) (Rec0 x)) where
-  consume (M1 (K1 x)) f = f x
-
-instance Consume y => Consume (S1 ('MetaSel x0 x1 x2 x3) (Rec0 x) :*: y) where
-  consume (M1 (K1 x) :*: y) f = consume y (f x) 
+instance Consume xs => Consume (x ': xs) where
+  consume (x :* xs) f = consume xs (f (unI x))
 
 facts :: ()
 facts = fold
@@ -199,7 +187,7 @@ boolMatcher :: Matcher Bool r ~ (r -> r -> r) => ()
 boolMatcher = ()
 
 data Thing = Thing Bool
-  deriving Generic
+  deriving (GHC.Generic, Generic)
 
 thingMatcher :: Matcher Thing r ~ ((Bool -> r) -> r) => ()
 thingMatcher = ()
@@ -213,11 +201,15 @@ tripleMatcher = ()
 voidMatcher :: Matcher Void r ~ r => ()
 voidMatcher = ()
 
-data Ploop = Clap Int Bool | Splop [Integer] Float | Flep [Int] [Float] [Bool] deriving Generic
+data Ploop = Clap Int Bool | Splop [Integer] Float | Flep [Int] [Float] [Bool] deriving (GHC.Generic, Generic)
 
-newtype X = X { unX :: Int } deriving Generic
+newtype X = X { unX :: Int } deriving (GHC.Generic, Generic)
 
-data Klop = Cloop Klop deriving Generic
+data Klop = Cloop Klop deriving (GHC.Generic, Generic)
+
+data Blango = Koooka Bool Int Float Integer Float Bool Integer Int deriving (GHC.Generic, Generic)
+
+data Klaka = Pooka Int Bool | Lotis Integer | Undo Int | Podango () deriving (GHC.Generic, Generic)
 
 tests :: Bool
 tests = and
@@ -228,4 +220,6 @@ tests = and
   , match (Clap 0 True) (\i b -> i == 0 && b) undefined undefined
   , match (X 1) (\x -> x == 1)
   , match (let x = Cloop x in x) (\_ -> True)
+  , match (Koooka True 0 0 0 0 True 0 0) (\b1 x1 x2 x3 x4 b2 x5 x6 -> b1 && b2 && x1 == 0 && x2 == 0 && x3 == 0 && x4 == 0 && x5 == 0 && x6 == 0)
+  , match (Podango ()) undefined undefined undefined (const True)
   ]
