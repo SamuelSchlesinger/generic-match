@@ -1,6 +1,6 @@
 cabal-version:       2.4
 name:                generic-match
-version:             0.2.0.2
+version:             0.3.0.0
 synopsis:            First class pattern matching
 description:         First class pattern matching.
 license:             MIT

@@ -23,7 +23,7 @@ License: MIT
 Maintainer: sgschlesinger@gmail.com
 Stability: experimental
 Portability: non-portable
-Description: First class pattern matching for GHC.Generics.
+Description: First class pattern matching based on generics-sop.
 -}
 module Generic.Match
 (
@@ -36,7 +36,7 @@ module Generic.Match
 , Matcher
 , Matcher'
 , Consumer
--- * Re-exported from GHC.Generics
+-- * Re-exported from Generics.SOP
 , Generic
 ) where
 

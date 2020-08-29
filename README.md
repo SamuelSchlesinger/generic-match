@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/SamuelSchlesinger/generic-match.svg?branch=master)](https://travis-ci.org/SamuelSchlesinger/generic-match)
 
 ## What?
-An implementation of first-class pattern matches in Haskell.
+An implementation of first-class pattern matches in Haskell, based on [generics-sop](https://hackage.haskell.org/package/generics-sop).
 
 ## Why?
 Oftentimes, when writing Haskell code, we want to branch on multiple cases of
@@ -53,7 +53,7 @@ data DatabaseAccess a =
     ConnectionFailure String
   | InvalidRowCount Int
   | Successful a
-  deriving Generic
+  deriving (GHC.Generic, Generic)
 
 doThing :: m (DatabaseAccess Bool)
 
